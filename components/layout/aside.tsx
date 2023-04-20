@@ -10,7 +10,7 @@ export default function Aside(){
     const links = [
         {icon: <VscDashboard/>, href: '/', label: 'Dashboard'},
         {icon: <VscArchive/>, href: '/essays', label: 'Essays'},
-        {icon: <VscArchive/>, href: '/disciplines', label: 'Disciplines'},
+        // {icon: <VscArchive/>, href: '/disciplines', label: 'Disciplines'},
         {icon: <MdOutlineQuestionAnswer/>, href: '/qna', label: 'Question & Answer'},
         // {icon: <VscFolderLibrary/>, href: '/disciplines', label: 'Disciplines'},
         // {icon: <VscWholeWord/>, href: '/services', label: 'Services'},
