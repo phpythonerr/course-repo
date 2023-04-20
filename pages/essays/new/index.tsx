@@ -37,7 +37,9 @@ export default function NewEssay(){
 
                 setLoading(true)
 
-                let { data: disciplineData, error: disciplineError } : any = await supabase.from('discipline').select('name, uuid, course ( name, uuid )').order('name')
+                let { data: disciplineData, error: disciplineError } : any = await supabase.from('discipline').select('name, uuid').order('name')
+
+                if(disciplineError) throw disciplineError
 
                 if(disciplineData) setDisciplines(disciplineData)
 
@@ -59,17 +61,13 @@ export default function NewEssay(){
 
     }, [user?.id])
 
-    const optgroups: { label: string; options: any[]; }[] = []
+    const optgroups: any = []
 
-    { disciplines?.map((discipline: { uuid: any; name: string; course: object | any }) : any => {
-        let options: { label: string; value: Key; }[] = []
-        discipline?.course?.map((course : {uuid: Key | string; name: string}) => (
-            options.push({label: course?.name, value: course?.uuid})
-        ))
+    { disciplines?.map((discipline: { name: any; uuid: any; }) : any => {
         optgroups.push(
             {
-                label: discipline.name,
-                options: options
+                label: discipline?.name, 
+                value: discipline?.uuid
             }
         )
     })}
@@ -113,21 +111,15 @@ export default function NewEssay(){
 
                                     if(similarData === 0){
 
-                                        let body = values.essay.replace('service.ivypanda.com/writing-help','customer.essayheap.com/auth/signup').replace('ivypanda.com','essayheap.com')
-
                                         let { data: essayData, error: essayError } : any = await supabase.from('essay').insert({
                                             title: values.title,
-                                            body: body,
+                                            body: values.essay,
                                             course: values.course,
                                             posted_by: user?.id
                                         })
                                         .select('uuid, slug, course ( slug, discipline (slug))').single()
 
                                         if(essayData){
-
-                                            let url : string = `https://www.essayheap.com/essays/${essayData?.course?.discipline?.slug}/${essayData?.course?.slug}/${essayData?.slug}`
-
-                                            // const response = await fetch('https://www.bing.com/indexnow?url=' + url + '&key=4a2d5e2f06f0428bb813e7f2da35a36d');
 
                                             window.scrollTo({ top: 0, behavior: 'smooth'})
 
