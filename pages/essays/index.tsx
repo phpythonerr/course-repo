@@ -54,7 +54,7 @@ export default function Essays(){
 
                 }
 
-                let { data: disciplineData, error: disciplineError } : any = await supabase.from('discipline').select('name, uuid, course ( name, uuid )').order('name')
+                let { data: disciplineData, error: disciplineError } : any = await supabase.from('discipline').select('name, uuid').order('name')
 
                 if(disciplineData) setDisciplines(disciplineData)
 
@@ -62,8 +62,8 @@ export default function Essays(){
 
                     let { data: essaysData, error: essaysError } : any = await supabase
                     .from('essay')
-                    .select('title, body, created_at, approved, uuid, slug, course ( name, discipline (name) )')
-                    .eq('course', filter)
+                    .select('title, body, created_at, approved, uuid, slug, discipline (name, slug)')
+                    .eq('discipline', filter)
                     .eq('posted_by', user?.id)
                     .eq('deleted', false)
                     .order('created_at', { ascending: false })
@@ -74,7 +74,7 @@ export default function Essays(){
                     let { count: essaysCount, error: essaysCountError } : any = await supabase
                     .from('essay')
                     .select('*', { count: 'exact', head: true})
-                    .eq('course', filter)
+                    .eq('discipline', filter)
                     .eq('posted_by', user?.id)
                     .eq('deleted', false)
 
@@ -85,11 +85,13 @@ export default function Essays(){
 
                     let { data: essaysData, error: essaysError } : any = await supabase
                     .from('essay')
-                    .select('title, body, created_at, approved, uuid, slug, course ( name, discipline (name) )')
+                    .select('title, body, created_at, approved, uuid, slug, discipline (name)')
                     .eq('posted_by', user?.id)
-                    .eq('deleted', false)
+                    .neq('deleted', true)
                     .order('created_at', { ascending: false })
                     .range(range_start, range_end)
+
+                    if(essaysError) throw essaysError
 
                     if(essaysData) setEssays(essaysData)
 
@@ -97,7 +99,7 @@ export default function Essays(){
                     .from('essay')
                     .select('*', { count: 'exact', head: true})
                     .eq('posted_by', user?.id)
-                    .eq('deleted', false)
+                    .neq('deleted', true)
 
                     setTotalEssays(essaysCount)
 
@@ -163,17 +165,13 @@ export default function Essays(){
 
     }
 
-    const optgroups: { label: string; options: any[]; }[] = []
+    const optgroups: any = []
 
-    { disciplines?.map((discipline: { uuid: any; name: string; course: object | any }) : any => {
-        let options: { label: string; value: Key; }[] = []
-        discipline?.course?.map((course : {uuid: Key | string; name: string}) => (
-            options.push({label: course?.name, value: course?.uuid})
-        ))
+    { disciplines?.map((discipline: { name: any; uuid: any; }) : any => {
         optgroups.push(
             {
-                label: discipline.name,
-                options: options
+                label: discipline?.name, 
+                value: discipline?.uuid
             }
         )
     })}
@@ -228,7 +226,7 @@ export default function Essays(){
                             </tr>
                         </thead>
                         <tbody>
-                            { essays.map((essay: { uuid: Key | null | undefined; title: string; slug: string; approved: boolean; course: { discipline: { name: string; }; name: string; }; created_at: any; }) => 
+                            { essays.map((essay: { uuid: Key | null | undefined; title: string; slug: string; approved: boolean; discipline: { name: string; }; created_at: any; }) => 
                                 {return (deleting && deleting === essay?.uuid) ? (<tr key={essay.uuid} className="text-sm border-b">
                                     <td colSpan={3}>
                                         <div className="flex text-red-600 bg-opacity-50 h-10 w-full text-sm justify-center items-center">
@@ -246,7 +244,7 @@ export default function Essays(){
                                         </span>
                                     </td>
                                     <td className="pr-5">
-                                        <span className="block">{ essay?.course?.discipline?.name + ' - ' + essay?.course.name }</span>
+                                        <span className="block">{ essay?.discipline?.name }</span>
                                     </td>
                                     <td className="pr-5">
                                         <div title={ new Date(essay?.created_at).toLocaleString() }>

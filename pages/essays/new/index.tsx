@@ -86,59 +86,44 @@ export default function NewEssay(){
                     <div className="col-span-12">
                         { success && <Success message="Essay Added Successfully"/>}
                         <Formik
-                            initialValues={{ course: '', title: '', essay: '' }}
+                            initialValues={{ discipline: '', title: '', essay: '' }}
                             validationSchema={Yup.object({
-                                course: Yup.string().required('Required'),
+                                discipline: Yup.string().required('Required'),
                                 title: Yup.string().required('Required'),
                                 essay: Yup.string().required('Required'),
                             })}
                             onSubmit={async(values, { setSubmitting, resetForm }) => {
+
+                                console.log(values)
 
 
                                 try{
 
                                     setProcessing(true)
 
-                                    setCheckingSimilarity(true)
+                                    let { data: essayData, error: essayError } : any = await supabase.from('essay').insert({
+                                        title: values.title,
+                                        body: values.essay,
+                                        discipline: values.discipline,
+                                        posted_by: user?.id
+                                    })
+                                    .select('uuid, slug, discipline ( slug )').single()
 
-                                    let {  count: similarData, error: similarError } : any = await supabase
-                                        .from('essay')
-                                        .select('*', { count: 'estimated', head: true})
-                                        .eq('deleted', false)
-                                        .ilike('title', '%'+ values.title +'%')
+                                    if(essayError) throw essayError
 
-                                    setCheckingSimilarity(false)
+                                    if(essayData){
 
-                                    if(similarData === 0){
+                                        window.scrollTo({ top: 0, behavior: 'smooth'})
 
-                                        let { data: essayData, error: essayError } : any = await supabase.from('essay').insert({
-                                            title: values.title,
-                                            body: values.essay,
-                                            course: values.course,
-                                            posted_by: user?.id
+                                        setSuccess(true)
+
+                                        resetForm({
+                                            values: {
+                                                discipline: values?.discipline,
+                                                title: '',
+                                                essay: ''
+                                            }
                                         })
-                                        .select('uuid, slug, course ( slug, discipline (slug))').single()
-
-                                        if(essayData){
-
-                                            window.scrollTo({ top: 0, behavior: 'smooth'})
-
-                                            setSuccess(true)
-
-                                            resetForm({
-                                                values: {
-                                                    course: values?.course,
-                                                    title: '',
-                                                    essay: ''
-                                                }
-                                            })
-
-                                        }
-
-                                    }
-                                    else{
-
-                                        setIsSimilar(true)
 
                                     }
 
@@ -160,10 +145,10 @@ export default function NewEssay(){
                             >
                             <Form>
                                 <div className="mb-3">
-                                    <label className="font-medium" htmlFor="course">Course</label>
+                                    <label className="font-medium" htmlFor="course">Discipline</label>
                                     <div>
                                         <Field 
-                                            name="course" 
+                                            name="discipline" 
                                             isMulti={false}
                                             component={SelectCourse} 
                                             className="bg-white z-30 rounded w-full"
